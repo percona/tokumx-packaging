@@ -1,0 +1,147 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+PRODUCT?=tokumx
+
+configure: configure-stamp
+configure-stamp:
+	dh_testdir
+        # Add here commands to configure the package.
+	@mkdir -p opt
+	(cd opt; \
+	  cmake \
+	    -D CMAKE_BUILD_TYPE=Release \
+	    -D TOKU_DEBUG_PARANOID=OFF \
+	    -D USE_VALGRIND=OFF \
+	    -D USE_CTAGS=OFF \
+	    -D USE_ETAGS=OFF \
+	    -D USE_GTAGS=OFF \
+	    -D USE_CSCOPE=OFF \
+	    -D USE_BDB=OFF \
+	    -D USE_SYSTEM_BOOST=ON \
+	    -D USE_SYSTEM_PCRE=ON \
+	    -D BUILD_TESTING=OFF \
+	    -D TOKUMX_SET_RPATH=OFF \
+	    -D CMAKE_INSTALL_RPATH=/usr/lib/tokumx \
+	    -D INSTALL_LIBDIR=lib/tokumx \
+	    -D TOKUMX_STRIP_BINARIES=OFF \
+	    ..)
+
+	touch configure-stamp
+
+
+build: build-stamp
+
+build-stamp: configure-stamp  
+	dh_testdir
+
+        # Add here commands to compile the package.
+	(cd opt; $(MAKE))
+        #docbook-to-man debian/tokumx.sgml > tokumx.1
+	ls debian/*.1 | grep -v 'mongod\.1' | grep -v 'mongos\.1' > debian/$(PRODUCT)-clients.manpages
+	ls debian/mongod.1 debian/mongos.1 > debian/$(PRODUCT)-server.manpages
+
+	touch $@
+
+clean: 
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp
+
+	$(RM) -r $(CURDIR)/debian/$(PRODUCT)-clients
+	$(RM) -r $(CURDIR)/debian/$(PRODUCT)-common
+	$(RM) -r $(CURDIR)/debian/$(PRODUCT)-dev
+	$(RM) -r $(CURDIR)/debian/$(PRODUCT)-server
+	$(RM) -r opt
+
+	dh_clean debian/files
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_prep
+	dh_installdirs
+
+	(cd opt; \
+	  cmake -D CMAKE_INSTALL_PREFIX=$(CURDIR)/debian/$(PRODUCT)-server/usr -D COMPONENT=tokumx_server -P cmake_install.cmake && \
+	  cmake -D CMAKE_INSTALL_PREFIX=$(CURDIR)/debian/$(PRODUCT)-clients/usr -D COMPONENT=tokumx_tools -P cmake_install.cmake && \
+	  cmake -D CMAKE_INSTALL_PREFIX=$(CURDIR)/debian/$(PRODUCT)-server/usr -D COMPONENT=tokumx_plugins -P cmake_install.cmake && \
+	  cmake -D CMAKE_INSTALL_PREFIX=$(CURDIR)/debian/$(PRODUCT)-common/usr -D COMPONENT=tokukv_libs_shared -P cmake_install.cmake && \
+	  cmake -D CMAKE_INSTALL_PREFIX=$(CURDIR)/debian/$(PRODUCT)-common/usr -D COMPONENT=tokubackup_libs_shared -P cmake_install.cmake && \
+	  cmake -D CMAKE_INSTALL_PREFIX=$(CURDIR)/debian/$(PRODUCT)-dev/usr -D COMPONENT=tokumx_client_headers -P cmake_install.cmake && \
+	  cmake -D CMAKE_INSTALL_PREFIX=$(CURDIR)/debian/$(PRODUCT)-dev/usr -D COMPONENT=tokumx_client_libs -P cmake_install.cmake)
+
+	install -dm755 $(CURDIR)/debian/$(PRODUCT)-server/usr/lib/tokumx/plugins
+	install -p -Dm644 $(CURDIR)/debian/tokumx.conf $(CURDIR)/debian/$(PRODUCT)-server/etc/tokumx.conf
+	install -p -Dm755 $(CURDIR)/debian/$(PRODUCT)-clients/usr/scripts/tokumxstat.py $(CURDIR)/debian/$(PRODUCT)-clients/usr/share/tokumx/scripts/tokumxstat.py
+	$(RM) -r $(CURDIR)/debian/$(PRODUCT)-clients/usr/scripts
+
+	mv $(CURDIR)/debian/$(PRODUCT)-dev/usr/lib/tokumx/* $(CURDIR)/debian/$(PRODUCT)-dev/usr/lib
+	rmdir $(CURDIR)/debian/$(PRODUCT)-dev/usr/lib/tokumx
+
+	echo 'distsrc/GNU-AGPL-3.0'         > $(CURDIR)/debian/$(PRODUCT)-common.docs
+	echo 'distsrc/README'              >> $(CURDIR)/debian/$(PRODUCT)-common.docs
+	echo 'distsrc/THIRD-PARTY-NOTICES' >> $(CURDIR)/debian/$(PRODUCT)-common.docs
+
+# Build architecture-independent files here.
+binary-indep: build install
+# We have nothing to do by default.
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs 
+
+# this has to happen after installchangelogs or it'll break installchangelogs
+	install -p -Dm644 $(CURDIR)/distsrc/NEWS $(CURDIR)/debian/$(PRODUCT)-common/usr/share/doc/tokumx/changelog
+	gzip -9 $(CURDIR)/debian/$(PRODUCT)-common/usr/share/doc/tokumx/changelog
+	install -p -Dm644 $(CURDIR)/src/third_party/ft-index/README-TOKUDB $(CURDIR)/debian/$(PRODUCT)-common/usr/share/doc/tokumx/README-TOKUKV
+
+	if [ x"tokumx" != x"$(PRODUCT)" ]; then \
+	    for suffix in preinst postinst prerm postrm; do \
+	        mv debian/tokumx-server.$$suffix debian/$(PRODUCT)-server.$$suffix; \
+	    done; \
+	    for suffix in config postinst templates; do \
+	        mv debian/tokumx-common.$$suffix debian/$(PRODUCT)-common.$$suffix; \
+	    done; \
+	fi
+
+	dh_installdocs
+	dh_installexamples
+#	dh_install
+#	dh_installmenu
+	dh_installdebconf	
+#	dh_installlogrotate
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installmime
+
+	for suffix in init upstart; do \
+	    mv debian/tokumx-server.$$suffix debian/$(PRODUCT)-server.tokumx.$$suffix; \
+	done
+
+	dh_installinit --name=tokumx
+#	dh_installinfo
+	dh_installman
+	dh_link
+	dh_strip --dbg-package=$(PRODUCT)-dbg
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_python2
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure

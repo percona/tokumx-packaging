@@ -33,7 +33,7 @@ Source6: %{product_name}.service
 BuildRequires: boost-devel
 BuildRequires: cmake
 %else
-BuildRequires: cmake28
+BuildRequires: cmake >= 2.8
 %endif
 BuildRequires: gcc
 BuildRequires: gcc-c++

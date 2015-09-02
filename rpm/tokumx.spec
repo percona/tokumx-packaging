@@ -5,6 +5,10 @@
 %endif
 %endif
 
+%if 0%{?rhel} == 5
+%define debug_package %{nil}
+%endif
+
 %if 0%{tokumx_enterprise}
 Name: tokumx-enterprise
 Conflicts: mongo, mongodb, mongo-stable, mongo-10gen, mongo-10gen-enterprise, mongo-10gen-unstable, mongo-10gen-unstable-shell, mongo-10gen-unstable-tools, mongodb-org, mongodb-org-shell, mongodb-org-tools, mongodb-org-unstable, mongodb-org-unstable-shell, mongodb-org-unstable-tools, tokumx

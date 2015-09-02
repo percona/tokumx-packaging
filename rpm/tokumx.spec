@@ -16,8 +16,8 @@ Version: %{?tokumx_version}%{!?tokumx_version:1.4.0}
 Release: %{?tokumx_rpm_release_version}%{!?tokumx_rpm_release_version:1}%{?dist}
 Summary: TokuMX client shell and tools
 License: AGPLv3 and zlib and ASL 2.0 and GPLv2
-Vendor: Tokutek, Inc.
-URL: http://www.tokutek.com/products/tokumx-for-mongodb
+Vendor: Percona, Inc
+URL: https://www.percona.com/software/mongo-database/percona-tokumx
 Group: Applications/Databases
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 

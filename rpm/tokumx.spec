@@ -234,7 +234,7 @@ install -p -dm755 %{buildroot}%{_libdir}/%{product_name}/plugins
 # we don't want to package debuginfo in centos5 because of size limit in rpm
 %if 0%{?rhel} == 5
 rm -rf %{buildroot}%{_libdir}/debug
-rm -rf %{buildroot}%{_usrsrc}/debug
+rm -rf %{buildroot}%{_prefix}/lib/debug
 %endif
 
 %post -p /sbin/ldconfig

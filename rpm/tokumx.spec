@@ -12,9 +12,11 @@
 %if 0%{tokumx_enterprise}
 Name: tokumx-enterprise
 Conflicts: mongo, mongodb, mongo-stable, mongo-10gen, mongo-10gen-enterprise, mongo-10gen-unstable, mongo-10gen-unstable-shell, mongo-10gen-unstable-tools, mongodb-org, mongodb-org-shell, mongodb-org-tools, mongodb-org-unstable, mongodb-org-unstable-shell, mongodb-org-unstable-tools, tokumx
+Requires: tokumx-enterprise-server
 %else
 Name: tokumx
 Conflicts: mongo, mongodb, mongo-stable, mongo-10gen, mongo-10gen-enterprise, mongo-10gen-unstable, mongo-10gen-unstable-shell, mongo-10gen-unstable-tools, mongodb-org, mongodb-org-shell, mongodb-org-tools, mongodb-org-unstable, mongodb-org-unstable-shell, mongodb-org-unstable-tools, tokumx-enterprise
+Requires: tokumx-server
 %endif
 Version: %{?tokumx_version}%{!?tokumx_version:1.4.0}
 Release: %{?tokumx_rpm_release_version}%{!?tokumx_rpm_release_version:1}%{?dist}
@@ -180,6 +182,9 @@ mkdir -p opt
 %if 0%{?tokukv_revision:1}
     -D TOKUKV_GIT_VERSION=%{tokukv_revision} \
 %endif
+%if 0%{?tokumx_audit_enterprise_revision:1}
+    -D TOKUMX_AUDIT_ENTERPRISE_GIT_VERSION=%{tokumx_audit_enterprise_revision} \
+%endif
     ..)
 make -C opt %{?_smp_mflags}
 
@@ -191,6 +196,7 @@ make -C opt %{?_smp_mflags}
   cmake -D COMPONENT=tokumx_plugins -P cmake_install.cmake && \
   cmake -D COMPONENT=tokukv_libs_shared -P cmake_install.cmake && \
   cmake -D COMPONENT=tokubackup_libs_shared -P cmake_install.cmake && \
+  cmake -D COMPONENT=tokumx_audit_libs_shared -P cmake_install.cmake && \
   cmake -D COMPONENT=tokumx_client_headers -P cmake_install.cmake && \
   cmake -D COMPONENT=tokumx_client_libs -P cmake_install.cmake)
 

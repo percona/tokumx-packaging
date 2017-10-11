@@ -155,6 +155,8 @@ rm -rf %{buildroot}
 mkdir -p opt
 (cd opt; \
   cmake \
+    -Wno-dev \
+    -D TOKUMX_USE_GIT_VERSION_EXPORTS=TRUE \
     -D CMAKE_BUILD_TYPE=Release \
     -D TOKU_DEBUG_PARANOID=OFF \
     -D USE_VALGRIND=OFF \
